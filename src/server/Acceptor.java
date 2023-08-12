@@ -7,7 +7,7 @@ import utils.Type;
 
 public class Acceptor {
   // stop the latest accepted proposal number
-  private double acceptedNum;
+  private double acceptedId;
 
   // the maximum proposal number
   private double maxId;
@@ -22,50 +22,52 @@ public class Acceptor {
 
 
   /**
-   * Prepare for a proposal number.
+   * Prepare for a proposal id.
    *
-   * @param id the proposal number
-   * @return if a proposal has been already accepted, return a promise with the accepted number and value;
-   * if the proposal is accepted, return a promise without any value;
-   * else return nothing to reject the proposal that the number is smaller than the maximum proposal number
+   * @param id the proposal id
+   * @return if a proposal has already been accepted, return a promise with the accepted ID and value;
+   * If the proposal is accepted, return a promise without any value, i.e. null;
+   * Else return nothing to indicate rejection of the proposal ID that is smaller than the maximum proposal ID
    */
   public Message prepare(double id) {
-    // fail
+    // check for failure
     crash();
+    
     if (maxId < id) {
       maxId = id;
-      Logger.printMsg("Sent promise to proposal No. " + maxId);
-      // check if the proposal has been already accepted
+      Logger.printMsg("Sent promise to proposal ID " + maxId);
+      
+      // check if any proposal has been already accepted
       if (proposalAccepted) {
-        return new Message(acceptedNum, Type.PROMISE, acceptedValue);
+        return new Message(acceptedId, Type.PROMISE, acceptedValue);
       }
       // return a promise without any value
       return new Message(maxId, Type.PROMISE, null);
     }
-    Logger.errorLog("Reject proposal No. " + id + ", reason: smaller than current proposal number: " + maxId);
+    Logger.printMsg("Proposal ID: " + id + " rejected; Max proposal ID seen till now: " + maxId);
     return null;
   }
 
   /**
    * Accept a promised value.
    *
-   * @param message the promised value
-   * @return if the value is accepted, return an ack;
-   * else return nothing to reject the proposal that the number is smaller than the maximum proposal number
+   * @param message representing a promised value
+   * @return If the value is accepted, return an acknowledgement;
+   * Else return nothing to indicate rejection of the proposal ID that is smaller than the maximum proposal ID
    */
   public Message accept(Message message) {
-    // fail
+    // checks for failure
     crash();
 
-    Logger.printMsg("Accepting for proposal No. " + message.getProposalNum());
-    if (maxId == message.getProposalNum()) {
+    Logger.printMsg("Accepting for proposal ID: " + message.getProposalId());
+    if (maxId == message.getProposalId()) {
       proposalAccepted = true;
-      acceptedNum = message.getProposalNum();
+      acceptedId = message.getProposalId();
       acceptedValue = message.getValue();
-      Logger.printMsg("Sent accepted ack to propose No. " + maxId);
+      Logger.printMsg("Sent 'ACCEPTED' ack to proposal ID: " + maxId);
       return new Message(maxId, Type.ACCEPT_RESPONSE, null);
     }
-    Logger.errorLog("Reject proposal No. " + message.getProposalNum() + ", reason: smaller than current proposal number: " + maxId);
+    Logger.printMsg("Reject proposal ID: " + message.getProposalId() + ", reason: smaller than current proposal number: " + maxId);
     return null;
   }
 
@@ -74,12 +76,12 @@ public class Acceptor {
    * Use to end the current paxos round and reset the state, once learners have updated the key value store.
    */
   public void resetProposalAccepted() {
-    Logger.printMsg("Proposal No. " + acceptedNum + " round ended");
+    Logger.printMsg("Proposal ID: " + acceptedId + " round has ended");
     this.proposalAccepted = false;
   }
 
   /**
-   * Make the thread to sleep, this will cause the proposer fail and response timeout.
+   * Fabricating a crash state by causing RMI timeout.
    */
   public void crash() {
     if (isDown) {

@@ -16,24 +16,18 @@ import utils.Logger;
 import utils.Message;
 import utils.Type;
 
+/**
+ * Proposer class that proposes a change in the shared resource shared by multiple server instances.
+ */
 public class Proposer {
-
-  // collect promises
   private final List<Message> promises = new ArrayList<>();
-
-  // servers information
   private final Map<String, String> serverList;
   private final int port;
-  // record proposal number
-  private double proposalNum;
-  // record proposal value
+  private double proposalId;
   private KeyValuePacket value;
-  // collect acks of acceptors when accepted a value
   private int acks;
-  // response to the client request
   private String response = "";
-  // phase 1 crash
-  private boolean isDown = false;
+  private boolean isDown = false; // phase 1 crash
 
   public Proposer(Map<String, String> serverList, int port) {
     this.serverList = serverList;
@@ -41,122 +35,117 @@ public class Proposer {
   }
 
   /**
-   * Propose a client request, synchronously hear from response from acceptors within the timeout.
+   * Propose a client request to acceptors and synchronously hear from response from acceptors within the timeout.
    *
-   * @param clientMessage client request
+   * @param clientRequest client request
    * @return response to the request
    */
-  public synchronized String propose(KeyValuePacket clientMessage) {
+  public synchronized String propose(KeyValuePacket clientRequest) {
     acks = 0;
     promises.clear();
-    // ================== phase1 ==================//
-    value = clientMessage;
-    proposalNum = getProposalNum();
+    
+    // ..................... PHASE 1 .....................//
+    value = clientRequest;
+    proposalId = getProposalID();
+    
     // broadcast prepare to all server
-    Logger.printMsg("Start a proposal No. " + proposalNum + ", value: " + value);
+    Logger.printMsg("Start a proposal No. " + proposalId + ", value: " + value);
     serverList.forEach((key, val) -> {
-      String[] info = parser(val);
-      String hostname = info[0];
-      int port = Integer.parseInt(info[1]);
+      String[] server = parser(val);
+      String host = server[0];
+      int port = Integer.parseInt(server[1]);
 
       try {
-        // get other node api
-        PaxosAPI api = (PaxosAPI) connect(hostname, port, "PaxosAPI");
-        // send prepare message to them
-        Message res = api.prepare(proposalNum);
+        PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
+        Message res = api.prepare(proposalId);
         // if a promise
         if (res != null && res.getMessageType().equals(Type.PROMISE)) {
           promises.add(res);
         }
       } catch (RemoteException | NotBoundException e) {
-        Logger.errorLog("Cannot connect to server with hostname: " + hostname + ", port: " + port + " at prepare phase");
+        Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at prepare phase");
       }
     });
     // fail
     if (isDown) {
-      Logger.errorLog("Proposer failed at phase 1 when processing the request: " + clientMessage);
+      Logger.errorLog("Could not propose request; proposer is down");
       crash();
 
     }
 
     // check if it gets majority support
     if (promises.size() > (serverList.size() / 2)) {
-      Logger.printMsg(promises.size() + " servers replied promises");
-      // check if a promise has an accepted value
+      Logger.printMsg(promises.size() + " servers replied with promises");
       value = getMaximumAcceptedValue();
-
 
       // ================== phase2 ==================//
       // send accept to all acceptors
-      Logger.printMsg("Start an accept processing for the proposal No. " + proposalNum + ", value: " + value);
+      Logger.printMsg("Starting accept phase for the proposal ID: " + proposalId + ", value: " + value);
       serverList.forEach((key, val) -> {
-        String[] info = parser(val);
-        String hostname = info[0];
-        int port = Integer.parseInt(info[1]);
+        String[] server = parser(val);
+        String host = server[0];
+        int port = Integer.parseInt(server[1]);
+
         try {
-          // get other node api
-          PaxosAPI api = (PaxosAPI) connect(hostname, port, "PaxosAPI");
-          // send accept message to them
-          Message res = api.accept(new Message(proposalNum, Type.ACCEPT_REQUEST, value));
-          // if a promise
+          PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
+          Message res = api.accept(new Message(proposalId, Type.ACCEPT_REQUEST, value));
+
           if (res != null && res.getMessageType().equals(Type.ACCEPT_RESPONSE)) {
             acks++;
           }
         } catch (RemoteException | NotBoundException e) {
-          Logger.errorLog("Cannot connect to server with hostname: " + hostname + ", port: " + port + " at accept request phase");
+          Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at accept request phase");
         }
       });
     } else {
-      response = "The proposal message: " + clientMessage + " failed to reach consensus, due to only " + promises.size() + " supports";
+      response = "Failed to reach majority consensus. " + promises.size() + "/" + serverList.size() + " supported transaction";
       Logger.errorLog(response);
       return response;
     }
 
     // check if it gets majority support
     if (acks > (serverList.size() / 2)) {
-      Logger.printMsg(acks + " servers accepted the proposal message");
+      Logger.printMsg(acks + " servers accepted the proposal request");
       // send commit request to all learners
       serverList.forEach((key, val) -> {
-        String[] info = parser(val);
-        String hostname = info[0];
-        int port = Integer.parseInt(info[1]);
+        String[] server = parser(val);
+        String host = server[0];
+        int port = Integer.parseInt(server[1]);
+
         try {
-          // get other node api
-          PaxosAPI api = (PaxosAPI) connect(hostname, port, "PaxosAPI");
-          // send commit message to them
-          response = api.commit(new Message(proposalNum, Type.ACCEPT_REQUEST, value));
+          PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
+          response = api.commit(new Message(proposalId, Type.ACCEPT_REQUEST, value));
         } catch (RemoteException | NotBoundException e) {
-          Logger.errorLog("Cannot connect to server with hostname: " + hostname + ", port: " + port + " at commit phase");
+          Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at commit phase");
         }
       });
     } else {
-      response = "The proposal message: " + clientMessage + " failed to reach consensus, due to only " + acks + " supports";
+      response = "Failed to reach consensus. " + acks + "/" + serverList.size() + " supported transaction";
       Logger.printMsg(response);
-      Logger.printMsg("Retry with the proposal message: " + clientMessage);
-      return propose(clientMessage);
+      Logger.printMsg("Retry proposal request: " + clientRequest);
+      return propose(clientRequest);
     }
 
-    // send the Paxos round end signal to all acceptors
+    // send the Paxos round completion signal to all acceptors
     serverList.forEach((key, val) -> {
       String[] info = parser(val);
-      String hostname = info[0];
+      String host = info[0];
       int port = Integer.parseInt(info[1]);
       try {
         // get other node api
-        PaxosAPI api = (PaxosAPI) connect(hostname, port, "PaxosAPI");
+        PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
         api.onClose();
       } catch (RemoteException | NotBoundException e) {
-        Logger.errorLog("Cannot connect to server with hostname: " + hostname + ", port: " + port + " at paxos end phase");
+        Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at paxos end phase");
       }
     });
 
-
-    Logger.printMsg("Proposal with id: " + proposalNum + ", request message: " + clientMessage + " done");
+    Logger.printMsg("Proposal with id: " + proposalId + ", request : " + clientRequest + " finished");
     return response;
   }
 
   /**
-   * Make the thread to sleep, this will cause the proposer fail and response timeout.
+   * Fabricating a crash state by causing RMI timeout.
    */
   public void crash() {
     try {
@@ -166,7 +155,7 @@ public class Proposer {
   }
 
   /**
-   * Down at phase1.
+   * Marking server down
    *
    * @param down boolean
    */
@@ -176,42 +165,42 @@ public class Proposer {
 
   /**
    * Get unique proposal number from timestamp and the server port combination.
-   * assume servers will run on the different ports
+   * We assume that the chances of different host issuing same ports are nil.
    *
-   * @return the current proposal number
+   * @return generated proposal ID
    */
-  public double getProposalNum() {
+  public double getProposalID() {
     return Double.parseDouble(System.currentTimeMillis() + "." + port);
   }
 
 
   /**
-   * If acceptors presented promises with values, then the method is to return the value with the maximum accepted proposal number.
+   * If acceptors sent promises with values, then return the value with the maximum accepted proposal ID.
    *
-   * @return the value with the maximum accepted proposal number or current value
+   * @return value with the maximum accepted proposal ID or current value
    */
   public KeyValuePacket getMaximumAcceptedValue() {
-    List<Message> list = promises.stream().filter(message -> message.getValue() != null).sorted(Comparator.comparingDouble(Message::getProposalNum).reversed()).collect(Collectors.toList());
+    List<Message> list = promises.stream().filter(message -> message.getValue() != null).sorted(Comparator.comparingDouble(Message::getProposalId).reversed()).collect(Collectors.toList());
     return list.isEmpty() ? value : list.get(0).getValue();
   }
 
   /**
    * get remote api
    *
-   * @param hostname hostname
-   * @param port     port
+   * @param host host
+   * @param port port
    * @return api
    */
-  public Remote connect(String hostname, int port, String apiName) throws RemoteException, NotBoundException {
-    Registry registry = LocateRegistry.getRegistry(hostname, port);
+  public Remote connect(String host, int port, String apiName) throws RemoteException, NotBoundException {
+    Registry registry = LocateRegistry.getRegistry(host, port);
     return registry.lookup(apiName);
   }
 
   /**
-   * split server hostname and port
+   * split server host and port
    *
    * @param s string to be parsed
-   * @return an array contain hostname and port
+   * @return an array contain host and port
    */
   public String[] parser(String s) {
     return s.split(":");

@@ -5,20 +5,20 @@ import java.io.Serializable;
 public class Message implements Serializable {
   private static final long serialVersionUID = 1234567L;
 
-  private final double proposalNum;
+  private final double proposalId;
 
   private final Type messageType;
 
-  private final KeyValuePacket value;
+  private final KeyValuePacket packet;
 
   public Message(double maxId, Type promise, KeyValuePacket o) {
-    this.proposalNum = maxId;
+    this.proposalId = maxId;
     this.messageType = promise;
-    this.value = o;
+    this.packet = o;
   }
 
-  public double getProposalNum() {
-    return proposalNum;
+  public double getProposalId() {
+    return proposalId;
   }
 
   public Type getMessageType() {
@@ -26,6 +26,10 @@ public class Message implements Serializable {
   }
 
   public KeyValuePacket getValue() {
-    return value;
+    return packet;
+  }
+
+  public String getKey() {
+    return packet.getKey();
   }
 }
