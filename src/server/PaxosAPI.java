@@ -8,72 +8,83 @@ import utils.KeyValuePacket;
 import utils.Request;
 
 /**
- * The api of Paxos consensus.
+ * The api to ship server RMI methods by clients.
  */
 public interface PaxosAPI extends Remote {
 
   /**
    * Receive get request from the client and query the key value to send the response.
    *
-   * @param message client key value message
-   * @return response
-   * @throws RemoteException thrown when cannot establish connection
+   * @param request client key value request
+   * @return response form the server
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  String get(KeyValuePacket message) throws RemoteException;
+  String get(KeyValuePacket request) throws RemoteException;
 
   /**
    * Receive put request from the client and store the key value and send the response.
    *
-   * @param message client key value message
-   * @return response
-   * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
+   * @param request client key value request
+   * @return response form the server
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  String put(KeyValuePacket message) throws RemoteException;
+  String put(KeyValuePacket request) throws RemoteException;
 
   /**
    * Receive delete request from the client and delete the key value and send the response.
    *
-   * @param message client key value message
-   * @return response
-   * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
+   * @param request client key value request
+   * @return response form the server
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  String delete(KeyValuePacket message) throws RemoteException;
+  String delete(KeyValuePacket request) throws RemoteException;
 
   /**
-   * Use for proposer starts a Paxos and requires acceptor to prepare.
+   * Used to starts a Paxos prepare request.
    *
-   * @param proposalNum the proposal number
-   * @return promise of the proposal or null if rejected
-   * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
+   * @param proposalId the proposal ID form the proposer
+   * @return promise for the proposal or null if rejected
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  Request prepare(double proposalNum) throws RemoteException;
+  Request prepare(double proposalId) throws RemoteException;
 
   /**
-   * Use for acceptor to decide whether accept the message.
+   * Used to starts a Paxos accept request.
    *
-   * @param message the message passed at phase 1
+   * @param request the request passed at phase 1
    * @return ack accept or null if the proposal number smaller than current
-   * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  Request accept(Request message) throws RemoteException;
+  Request accept(Request request) throws RemoteException;
 
   /**
-   * Use for acceptor ends the current Paxos round.
+   * Use by the acceptor to end the current Paxos round.
    *
-   * @throws RemoteException thrown when the server is not reachable
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
   void onClose() throws RemoteException;
 
   /**
-   * Use for leaner to commit the chosen message.
+   * Used by leaner to commit the chosen client request.
    *
-   * @param message the chosen message
-   * @return response after processing the commit of message
-   * @throws RemoteException thrown when cannot establish connection
+   * @param request the chosen request
+   * @return response after commit process
+   * @throws RemoteException exception during rmi connection/ method invocation
    */
-  String commit(Request message) throws RemoteException;
+  String commit(Request request) throws RemoteException;
 
-  String getName() throws  RemoteException;
+  /**
+   * Returns the names representing the server address
+   *
+   * @return name
+   * @throws RemoteException exception during rmi connection/ method invocation
+   */
+  String getName() throws RemoteException;
 
+  /**
+   * Stores key value store to offline map.properties file
+   *
+   * @throws IOException accessing file from the project folder
+   */
   void saveFile() throws IOException;
 }

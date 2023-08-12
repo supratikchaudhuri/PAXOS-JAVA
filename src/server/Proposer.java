@@ -25,10 +25,16 @@ public class Proposer {
   private final int port;
   private double proposalId;
   private KeyValuePacket value;
-  private int acks;
+  private int acknowledgements;
   private String response = "";
-  private boolean isDown = false; // phase 1 crash
+  private boolean isDown = false;
 
+  /**
+   * Constructor for Proposer.
+   *
+   * @param serverList list to participating servers
+   * @param port       port of the current servers acceptor
+   */
   public Proposer(Map<String, String> serverList, int port) {
     this.serverList = serverList;
     this.port = port;
@@ -41,14 +47,14 @@ public class Proposer {
    * @return response to the request
    */
   public synchronized String propose(KeyValuePacket clientRequest) {
-    acks = 0;
+    acknowledgements = 0;
     promises.clear();
-    
-    // ..................... PHASE 1 .....................//
+
+    // ..................... PHASE 1 .....................
     value = clientRequest;
     proposalId = getProposalID();
-    
-    // broadcast prepare to all server
+
+    // broadcast prepare to all server acceptors
     Logger.proposerLog("Start a proposal No. " + proposalId + ", value: " + value);
     serverList.forEach((key, val) -> {
       String[] server = parser(val);
@@ -71,7 +77,7 @@ public class Proposer {
     if (isDown) {
       response = "Could not propose request. Proposer is down";
       Logger.errorLog(response);
-//      crash();
+
       return response;
     }
 
@@ -80,7 +86,7 @@ public class Proposer {
       Logger.proposerLog(promises.size() + " servers replied with promises");
       value = getMaximumAcceptedValue();
 
-      // ================== phase2 ==================//
+      // ..................... PHASE 2 .....................
       // send accept to all acceptors
       Logger.proposerLog("Starting accept phase for the proposal ID: " + proposalId + ", value: " + value);
       serverList.forEach((key, val) -> {
@@ -93,7 +99,7 @@ public class Proposer {
           Request res = api.accept(new Request(proposalId, Type.ACCEPT_REQUEST, value));
 
           if (res != null && res.getMessageType().equals(Type.ACCEPT_RESPONSE)) {
-            acks++;
+            acknowledgements++;
           }
         } catch (RemoteException | NotBoundException e) {
           Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at accept request phase");
@@ -106,8 +112,8 @@ public class Proposer {
     }
 
     // check if it gets majority support
-    if (acks > (serverList.size() / 2)) {
-      Logger.proposerLog(acks + " servers accepted the proposal request");
+    if (acknowledgements > (serverList.size() / 2)) {
+      Logger.proposerLog(acknowledgements + " servers accepted the proposal request");
       // send commit request to all learners
       serverList.forEach((key, val) -> {
         String[] server = parser(val);
@@ -122,7 +128,7 @@ public class Proposer {
         }
       });
     } else {
-      response = "Failed to reach consensus. " + acks + "/" + serverList.size() + " supported transaction";
+      response = "Failed to reach consensus. " + acknowledgements + "/" + serverList.size() + " supported transaction";
       Logger.proposerLog(response);
       Logger.proposerLog("Retry proposal request: " + clientRequest);
       return propose(clientRequest);
@@ -149,17 +155,17 @@ public class Proposer {
   /**
    * Fabricating a crash state by causing RMI timeout.
    */
-  public void crash() {
-    try {
-      Thread.sleep(10000);
-    } catch (InterruptedException ignore) {
-    }
-  }
+//  public void crash() {
+//    try {
+//      Thread.sleep(10000);
+//    } catch (InterruptedException ignore) {
+//    }
+//  }
 
   /**
    * Marking if proposer is down or not
    *
-   * @param down boolean
+   * @param down stating the liveliness of proposer
    */
   public void setDown(boolean down) {
     isDown = down;
@@ -188,9 +194,9 @@ public class Proposer {
   /**
    * get remote api
    *
-   * @param host host
-   * @param port port
-   * @return api
+   * @param host host of registry
+   * @param port port of registry
+   * @return api object (PaxosAPI object)
    */
   public Remote connect(String host, int port, String apiName) throws RemoteException, NotBoundException {
     Registry registry = LocateRegistry.getRegistry(host, port);
@@ -198,10 +204,10 @@ public class Proposer {
   }
 
   /**
-   * split server host and port
+   * split server host and port from string
    *
    * @param s string to be parsed
-   * @return an array contain host and port
+   * @return an array containing host and port
    */
   public String[] parser(String s) {
     return s.split(":");

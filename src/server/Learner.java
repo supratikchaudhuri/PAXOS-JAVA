@@ -1,54 +1,60 @@
 package server;
+
 import java.io.IOException;
 
 import DB.DB;
 import utils.KeyValuePacket;
 
+/**
+ * Learner class to commit requests to modify the key value store.
+ */
 public class Learner extends DB {
 
+  /**
+   * Constructor to initialize database, i.e. key value store
+   *
+   * @throws IOException exception
+   */
   public Learner() throws IOException {
     super();
   }
 
   /**
-   * Use for commit key value pair and modify the storage.
+   * Used for committing key value pair, or modify the storage.
    *
-   * @param message the message to be committed
+   * @param request the request to be committed
    * @return response
    */
-  public String commit(KeyValuePacket message) {
+  public String commit(KeyValuePacket request) {
     String res;
-    switch (message.getType()) {
+    switch (request.getType()) {
       case GET:
-        // if the key is existed
-        if (contains(message.getKey())) {
-          res = "key: " + message.getKey() + ", value: " + get(message.getKey());
+        if (contains(request.getKey())) {
+          res = "key: " + request.getKey() + ", value: " + get(request.getKey());
         } else {
-          res = "key: " + message.getKey() + " is not found";
+          res = "key: " + request.getKey() + " not found in map";
         }
         return res;
+
       case PUT:
-        // if the key is existed
-        if (contains(message.getKey())) {
-          res = "key: " + message.getKey() + ", with value: " + get(message.getKey()) + " already exists";
+        if (contains(request.getKey())) {
+          res = "key: " + request.getKey() + ", with value: " + get(request.getKey()) + " already exists";
         } else {
-          put(message.getKey(), message.getValue());
-          res = "key: " + message.getKey() + ", value: " + message.getValue() + " stored in Key-Value store";
+          put(request.getKey(), request.getValue());
+          res = "key: " + request.getKey() + ", value: " + request.getValue() + " stored in Key-Value store";
         }
         return res;
+
       case DELETE:
-        // if the key is not existed
-        if (!contains(message.getKey())) {
-          res = "key: " + message.getKey() + " doesn't exist";
+        if (!contains(request.getKey())) {
+          res = "key: " + request.getKey() + " doesn't exist";
         } else {
-          delete(message.getKey());
-          res = "key: " + message.getKey() + " has been deleted";
+          delete(request.getKey());
+          res = "key: " + request.getKey() + " has been deleted";
         }
         return res;
-//      case SAVE:
-//        saveMapToFile();
+
       default:
-        // if malformed
         return null;
     }
   }

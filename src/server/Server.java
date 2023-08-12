@@ -10,16 +10,25 @@ import utils.KeyValuePacket;
 import utils.Logger;
 import utils.Request;
 
+/**
+ * Server class to ship all the methods to be used by clients to store key value pairs in map.
+ */
 public class Server extends UnicastRemoteObject implements PaxosAPI {
-
   private final Proposer proposer;
-
   private final Acceptor acceptor;
-
   private final Learner learner;
   String name;
 
-  protected Server(Map<String, String> serverList, String host, int port) throws IOException, NotBoundException {
+  /**
+   * Constructor for servers instance.
+   *
+   * @param serverList list of servers
+   * @param host       host of the server
+   * @param port       port of the server
+   * @throws IOException       exception
+   * @throws NotBoundException exception
+   */
+  public Server(Map<String, String> serverList, String host, int port) throws IOException, NotBoundException {
     name = host + ":" + port;
     this.proposer = new Proposer(serverList, port);
     this.acceptor = new Acceptor();
@@ -29,11 +38,10 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
     Logger.printMsg("Server started ...\n");
   }
 
-
   /**
-   * Start a daemon thread.
+   * Start a daemon (background) thread.
    *
-   * @param object the runnable object to be started
+   * @param object the runnable object to be started in the background
    */
   public void start(Runnable object) {
     Thread thread = new Thread(object);

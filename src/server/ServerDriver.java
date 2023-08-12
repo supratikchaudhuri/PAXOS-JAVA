@@ -11,17 +11,27 @@ import java.util.Map;
 import utils.Logger;
 import utils.ServerListFetcher;
 
+/**
+ * Driver class to start a server at a specific host and port
+ */
 public class ServerDriver {
+  /**
+   * Runner function of the class
+   *
+   * @param args host and port of the server instance.
+   */
   public static void main(String[] args) {
     try {
       if (args.length != 2) {
         throw new IllegalArgumentException("Exactly 2 arguments required, \"<server_ip> <server_port>\"");
       }
-      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "5000");
-      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "5000");
 
       String host = args[0];
       int port = Integer.parseInt(args[1]);
+
+      System.setProperty("java.rmi.server.hostname", host);
+      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "5000");
+      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "5000");
 
       Map<String, String> serverList = ServerListFetcher.fetchServers();
 
