@@ -1,8 +1,8 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.UnknownHostException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 
@@ -17,8 +17,10 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
   private final Acceptor acceptor;
 
   private final Learner learner;
+  String name;
 
-  protected Server(Map<String, String> serverList, int port) throws RemoteException, UnknownHostException, NotBoundException {
+  protected Server(Map<String, String> serverList, String host, int port) throws IOException, NotBoundException {
+    name = host + ":" + port;
     this.proposer = new Proposer(serverList, port);
     this.acceptor = new Acceptor();
     this.learner = new Learner();
@@ -89,7 +91,12 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
 
   @Override
   public String getName() throws RemoteException {
-    return "my _ name";
+    return name;
+  }
+
+  @Override
+  public void saveFile() throws IOException {
+    learner.saveMapToFile();
   }
 }
 

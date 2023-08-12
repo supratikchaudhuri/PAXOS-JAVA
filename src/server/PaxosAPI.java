@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -74,4 +75,5 @@ public interface PaxosAPI extends Remote {
 
   String getName() throws  RemoteException;
 
+  void saveFile() throws IOException;
 }

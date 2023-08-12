@@ -1,8 +1,14 @@
 package server;
+import java.io.IOException;
+
 import DB.DB;
 import utils.KeyValuePacket;
 
 public class Learner extends DB {
+
+  public Learner() throws IOException {
+    super();
+  }
 
   /**
    * Use for commit key value pair and modify the storage.
@@ -15,7 +21,7 @@ public class Learner extends DB {
     switch (message.getType()) {
       case GET:
         // if the key is existed
-        if (isContain(message.getKey())) {
+        if (contains(message.getKey())) {
           res = "key: " + message.getKey() + ", value: " + get(message.getKey());
         } else {
           res = "key: " + message.getKey() + " is not found";
@@ -23,7 +29,7 @@ public class Learner extends DB {
         return res;
       case PUT:
         // if the key is existed
-        if (isContain(message.getKey())) {
+        if (contains(message.getKey())) {
           res = "key: " + message.getKey() + ", with value: " + get(message.getKey()) + " already exists";
         } else {
           put(message.getKey(), message.getValue());
@@ -32,13 +38,15 @@ public class Learner extends DB {
         return res;
       case DELETE:
         // if the key is not existed
-        if (!isContain(message.getKey())) {
+        if (!contains(message.getKey())) {
           res = "key: " + message.getKey() + " doesn't exist";
         } else {
           delete(message.getKey());
           res = "key: " + message.getKey() + " has been deleted";
         }
         return res;
+//      case SAVE:
+//        saveMapToFile();
       default:
         // if malformed
         return null;

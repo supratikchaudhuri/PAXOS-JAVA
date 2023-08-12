@@ -8,10 +8,14 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import server.PaxosAPI;
 import utils.KeyValuePacket;
 import utils.Logger;
+import utils.ServerListFetcher;
 import utils.Type;
 
 import static utils.Logger.errorLog;
@@ -26,6 +30,8 @@ public class Client {
   static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
   static List<PaxosAPI> servers = new ArrayList<>();
   static PaxosAPI api;
+//  static Map<String, String> serverList;
+  static Map<String, PaxosAPI> serverMap = new HashMap<>();
 
   /**
    * Driver method of the Client class
@@ -43,13 +49,19 @@ public class Client {
       System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "30000");
 
       Logger.printMsg(getTimeStamp() + " Establishing communication with servers...");
-      for (int i = 0; i < args.length; i += 2) {
-        String host = args[i];
-        int port = Integer.parseInt(args[i + 1]);
-        addServer(host, port);
+
+      Map<String, String> serverList = ServerListFetcher.fetchServers();
+      for(String key: serverList.keySet()) {
+        String[] server = serverList.get(key).split(":");
+        String host = server[0];
+        int port = Integer.parseInt(server[1]);
+        serverMap.put(key, getServer(host, port));
       }
+
       Logger.printMsg(getTimeStamp() + " Successfully connected to all servers.");
-      api = servers.get(0);
+      String firstServerKey = serverMap.keySet().stream().findFirst().get();
+
+      api = serverMap.get(firstServerKey);
 
       startInteractionWithServer();
 
@@ -68,13 +80,12 @@ public class Client {
     }
   }
 
-  private static void addServer(String host, int port) throws RemoteException, NotBoundException {
+  private static PaxosAPI getServer(String host, int port) throws RemoteException, NotBoundException {
     Registry registry = LocateRegistry.getRegistry(host, port);
-    PaxosAPI api = (PaxosAPI) registry.lookup("PaxosAPI");
-    servers.add(api);
+    return (PaxosAPI) registry.lookup("PaxosAPI");
   }
 
-  private static boolean getOperationUI() throws IOException, InterruptedException {
+  private static boolean getOperationUI() throws IOException {
     String requestTime = "";
     String request = "";
     String response = "";
@@ -113,13 +124,13 @@ public class Client {
           break;
         }
         case "4": {
-          api = servers.get(getServerId());
+          api = getServerByUserChoice();
           request = "Change server to:" + api.getName();
           response = "Sever changed to: " + api.getName();
           break;
         }
         case "5": {
-//          api.handleRequest("save", null, null);
+          api.saveFile();
           return true;
         }
         default:
@@ -155,16 +166,23 @@ public class Client {
     return br.readLine().trim();
   }
 
-  private static int getServerId() throws IOException {
+  private static PaxosAPI getServerByUserChoice() throws IOException {
     Logger.printMsg("Choose one of the available servers ids...");
-    for (int i = 0; i < servers.size(); i++) {
-      Logger.printMsg("Server id: " + (i + 1) + " => " + servers.get(i).getName());
+
+    for(String serverId: serverMap.keySet()) {
+      Logger.printMsg("ID: " + serverId + ", Address => " + serverMap.get(serverId).getName());
     }
 
     System.out.print("Enter server id: ");
-    int id = Integer.parseInt(br.readLine().trim());
-    System.out.println("Choosing: " + servers.get(id - 1).getName());
-    return id - 1;
+    String id = br.readLine().trim();
+    if(serverMap.containsKey(id)) {
+      System.out.println("Choosing: " + id);
+      return serverMap.get(id);
+    }
+    else {
+      Logger.printMsg("Please choose a valid server");
+      return api;
+    }
   }
 
   private static void addDefaultKeyValuePairs() throws IOException, InterruptedException {

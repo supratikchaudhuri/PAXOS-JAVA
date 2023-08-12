@@ -1,7 +1,16 @@
 package DB;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import utils.Logger;
 
 /**
  * Database
@@ -11,8 +20,23 @@ public class DB {
   // create a hash map to storage key value pairs
   private final Map<String, String> db;
 
-  public DB() {
+  public DB() throws IOException {
     this.db = new HashMap<>();
+    populateMap();
+  }
+
+  private void populateMap() throws IOException {
+    Properties prop = new Properties();
+    InputStream in = new FileInputStream("map.properties");
+    prop.load(in);
+    in.close();
+
+    Set<Object> set = prop.keySet();
+
+    for(Object o: set){
+      String key = (String)o;
+      db.put(key, prop.getProperty(key));
+    }
   }
 
   /**
@@ -50,8 +74,21 @@ public class DB {
    * @param key key
    * @return true if it has, otherwise false
    */
-  public synchronized boolean isContain(String key) {
+  public synchronized boolean contains(String key) {
     return db.containsKey(key);
+  }
+
+  public void saveMapToFile() throws IOException {
+    Logger.errorLog("here");
+    Properties prop = new Properties();
+    InputStream in = new FileInputStream("map.properties");
+    prop.load(in);
+    in.close();
+
+    for(String key: db.keySet()) {
+      prop.setProperty(key, db.get(key));
+    }
+    prop.store(new FileOutputStream("map.properties"), null);
   }
 
 }

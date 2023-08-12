@@ -41,7 +41,6 @@ public class Proposer {
    * @return response to the request
    */
   public synchronized String propose(KeyValuePacket clientRequest) {
-    System.out.println("IS DOWN => " + isDown);
     acks = 0;
     promises.clear();
     
