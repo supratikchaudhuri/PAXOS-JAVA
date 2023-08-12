@@ -7,8 +7,17 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import server.PaxosAPI;
 import utils.KeyValuePacket;
@@ -25,6 +34,9 @@ import static utils.Logger.responseLog;
  * Client class that is used to interact with a server and invoke remote methods
  */
 public class Client {
+  private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+  private static final Queue<KeyValuePacket> failedRequest = new LinkedBlockingQueue<>();
+
   static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
   static PaxosAPI api;
   static Map<String, PaxosAPI> serverMap = new HashMap<>();
@@ -34,11 +46,9 @@ public class Client {
    * Sets up all the servers to communicate with from the servers.properties file
    */
   public static void main(String[] args) throws IOException, InterruptedException {
+    monitor();
+
     try {
-//      if (args.length == 0 || args.length % 2 != 0 || Integer.parseInt(args[1]) > 65535) {
-//        throw new IllegalArgumentException("Invalid arguments. " +
-//                "Please provide valid IPs and PORT (0-65535) numbers and start again.");
-//      }
 
       Logger.printMsg(getTimeStamp() + " Establishing communication with servers...");
 
@@ -55,6 +65,8 @@ public class Client {
 
       api = serverMap.get(firstServerKey);
 
+      addDefaultKeyValuePairs();
+
       startInteractionWithServer();
 
     } catch (IOException | NotBoundException | InterruptedException e) {
@@ -65,7 +77,6 @@ public class Client {
   }
 
   private static void startInteractionWithServer() throws IOException, InterruptedException {
-    addDefaultKeyValuePairs();
     boolean exit = false;
     while (!exit) {
       exit = getOperationUI();
@@ -99,6 +110,7 @@ public class Client {
 
     printMenu();
     String op = br.readLine().trim();
+    KeyValuePacket packet = null;
 
     try {
       switch (op) {
@@ -106,7 +118,7 @@ public class Client {
           String key = getKey();
           request = "Get " + key;
           requestTime = getTimeStamp();
-          KeyValuePacket packet = new KeyValuePacket(Type.GET, key, null);
+          packet = new KeyValuePacket(Type.GET, key, null);
           response = api.get(packet);
 
           break;
@@ -116,7 +128,7 @@ public class Client {
           String value = getValue();
           request = "PUT (" + key + ", " + value + ")";
           requestTime = getTimeStamp();
-          KeyValuePacket packet = new KeyValuePacket(Type.PUT, key, value);
+          packet = new KeyValuePacket(Type.PUT, key, value);
           response = api.put(packet);
 
           break;
@@ -125,7 +137,7 @@ public class Client {
           String key = getKey();
           request = "Delete " + key;
           requestTime = getTimeStamp();
-          KeyValuePacket packet = new KeyValuePacket(Type.DELETE, key, null);
+          packet = new KeyValuePacket(Type.DELETE, key, null);
           response = api.delete(packet);
 
           break;
@@ -151,6 +163,9 @@ public class Client {
     } catch (RuntimeException e) {
       errorLog("1 or more server(s) may be unreachable..." + e.getMessage());
       errorLog("Check if server id/ map request is valid. View ReadMe for the program...");
+      if(packet != null)
+        failedRequest.add(packet);
+
       return false;
     }
 
@@ -203,11 +218,53 @@ public class Client {
    * @throws IOException exception
    */
   private static void addDefaultKeyValuePairs() throws IOException {
-    api.put(new KeyValuePacket(Type.PUT, "hello", "world"));
-    api.put(new KeyValuePacket(Type.PUT, "CS6650", "Building Scalable Distributed System"));
-    api.put(new KeyValuePacket(Type.PUT, "MS", "Computer Science"));
-    api.put(new KeyValuePacket(Type.PUT, "Firstname Lastname", "John Doe"));
-    api.put(new KeyValuePacket(Type.PUT, "BTC", "Bitcoin"));
+    try {
+      api.put(new KeyValuePacket(Type.PUT, "hello", "world"));
+      api.put(new KeyValuePacket(Type.PUT, "CS6650", "Building Scalable Distributed System"));
+      api.put(new KeyValuePacket(Type.PUT, "MS", "Computer Science"));
+      api.put(new KeyValuePacket(Type.PUT, "Firstname Lastname", "John Doe"));
+      api.put(new KeyValuePacket(Type.PUT, "BTC", "Bitcoin"));
+    } catch (RuntimeException e) {
+
+    }
+
+  }
+
+  public static void monitor() {
+    executorService.scheduleAtFixedRate(() -> {
+      // if a failed request present
+      while (!failedRequest.isEmpty()) {
+        KeyValuePacket packet = failedRequest.poll();
+        // choose another server to retry
+
+        PaxosAPI randomAPI = getRandomServerAPI();
+
+        try {
+          Logger.printMsg("Retrying " + packet + " to a different server");
+          if (Type.PUT.equals(packet.getType())) {
+            randomAPI.put(packet);
+          } else if (Type.DELETE.equals(packet.getType())) {
+            randomAPI.delete(packet);
+          }
+        } catch (RemoteException e) {
+          Logger.errorLog("Request + " + packet +  " failed again");
+
+          // add the request back to the queue if failed again
+          failedRequest.add(packet);
+        }
+      }
+    }, 0, 2000, TimeUnit.MILLISECONDS);
+  }
+
+  private static PaxosAPI getRandomServerAPI() {
+    Set<String> keySet = serverMap.keySet();
+    List<String> keyList = new ArrayList<>(keySet);
+
+    int size = keyList.size();
+    int randIdx = new Random().nextInt(size);
+
+    String randomKey = keyList.get(randIdx);
+    return serverMap.get(randomKey);
   }
 }
 

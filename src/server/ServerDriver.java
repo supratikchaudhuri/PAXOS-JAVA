@@ -42,7 +42,7 @@ public class ServerDriver {
     } catch (IllegalArgumentException iae) {
       Logger.errorLog(iae.getMessage());
     } catch (RemoteException | AlreadyBoundException e) {
-      Logger.errorLog("Cannot register at given port, please modify the configuration file");
+      Logger.errorLog("Problem connecting to server. Please check if server address in servers.properties file are valid/free");
     } catch (NotBoundException e) {
       Logger.errorLog("Cannot connect to Proposer helper with given the hostname and port");
     } catch (IOException e) {
