@@ -32,7 +32,12 @@ Format of `servers.properties`file (see example image: server_properties.png in 
 3. The **DELETE** operation deletes a key-value pair from the map. If the key does not exist, the map remains unchanged.
 4. The **Change Server** operation selects a particular sever to interact with from a list of all servers user provided as cli arguments.
 5. The **Save & Exit** operation permanently stores changes in the external file. If client is closes without this option, changes made would not persist.
-
+6. **Replicating acceptor and proposer failure** in the ServerDriver CLI, press any one of these characters:
+   - 0 to suspend the acceptor 
+   - 1 to recover the acceptor
+   - 2 to suspend the proposer
+   - 3 to recover the proposer
+   
 ---
 
 ### Map characteristics:
