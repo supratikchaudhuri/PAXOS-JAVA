@@ -6,18 +6,10 @@ import utils.Message;
 import utils.Type;
 
 public class Acceptor {
-  // stop the latest accepted proposal number
   private double acceptedId;
-
-  // the maximum proposal number
   private double maxId;
-
-  // latest accepted value
   private KeyValuePacket acceptedValue;
-
   private boolean proposalAccepted = false;
-
-  // crash trigger
   private boolean isDown = false;
 
 
@@ -35,7 +27,7 @@ public class Acceptor {
     
     if (maxId < id) {
       maxId = id;
-      Logger.printMsg("Sent promise to proposal ID " + maxId);
+      Logger.acceptorLog("Sent promise to proposal ID " + maxId);
       
       // check if any proposal has been already accepted
       if (proposalAccepted) {
@@ -44,7 +36,7 @@ public class Acceptor {
       // return a promise without any value
       return new Message(maxId, Type.PROMISE, null);
     }
-    Logger.printMsg("Proposal ID: " + id + " rejected; Max proposal ID seen till now: " + maxId);
+    Logger.acceptorLog("Proposal ID: " + id + " rejected; Max proposal ID seen till now: " + maxId);
     return null;
   }
 
@@ -59,15 +51,15 @@ public class Acceptor {
     // checks for failure
     crash();
 
-    Logger.printMsg("Accepting for proposal ID: " + message.getProposalId());
+    Logger.acceptorLog("Accepting for proposal ID: " + message.getProposalId());
     if (maxId == message.getProposalId()) {
       proposalAccepted = true;
       acceptedId = message.getProposalId();
       acceptedValue = message.getValue();
-      Logger.printMsg("Sent 'ACCEPTED' ack to proposal ID: " + maxId);
+      Logger.acceptorLog("Sent 'ACCEPTED' ack to proposal ID: " + maxId);
       return new Message(maxId, Type.ACCEPT_RESPONSE, null);
     }
-    Logger.printMsg("Reject proposal ID: " + message.getProposalId() + ", reason: smaller than current proposal number: " + maxId);
+    Logger.acceptorLog("Reject proposal ID: " + message.getProposalId() + ", reason: smaller than current proposal number: " + maxId);
     return null;
   }
 
@@ -76,7 +68,8 @@ public class Acceptor {
    * Use to end the current paxos round and reset the state, once learners have updated the key value store.
    */
   public void resetProposalAccepted() {
-    Logger.printMsg("Proposal ID: " + acceptedId + " round has ended");
+    Logger.acceptorLog("Proposal ID: " + acceptedId + " round has ended\n" 
+             + "-----------------------------------------------------------------------\n\n");
     this.proposalAccepted = false;
   }
 

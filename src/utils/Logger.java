@@ -55,6 +55,14 @@ public class Logger {
     System.out.println(getTimeStamp() + "RESPONSE: " + res);
   }
 
+  public static void proposerLog(String res) {
+    System.out.println(getTimeStamp() + "PROPOSER: " + res);
+  }
+
+  public static void acceptorLog(String res) {
+    System.out.println(getTimeStamp() + "ACCEPTOR: " + res);
+  }
+
   /**
    * Logs error to the console
    *

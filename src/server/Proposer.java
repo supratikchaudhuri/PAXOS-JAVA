@@ -49,7 +49,7 @@ public class Proposer {
     proposalId = getProposalID();
     
     // broadcast prepare to all server
-    Logger.printMsg("Start a proposal No. " + proposalId + ", value: " + value);
+    Logger.proposerLog("Start a proposal No. " + proposalId + ", value: " + value);
     serverList.forEach((key, val) -> {
       String[] server = parser(val);
       String host = server[0];
@@ -75,12 +75,12 @@ public class Proposer {
 
     // check if it gets majority support
     if (promises.size() > (serverList.size() / 2)) {
-      Logger.printMsg(promises.size() + " servers replied with promises");
+      Logger.proposerLog(promises.size() + " servers replied with promises");
       value = getMaximumAcceptedValue();
 
       // ================== phase2 ==================//
       // send accept to all acceptors
-      Logger.printMsg("Starting accept phase for the proposal ID: " + proposalId + ", value: " + value);
+      Logger.proposerLog("Starting accept phase for the proposal ID: " + proposalId + ", value: " + value);
       serverList.forEach((key, val) -> {
         String[] server = parser(val);
         String host = server[0];
@@ -105,7 +105,7 @@ public class Proposer {
 
     // check if it gets majority support
     if (acks > (serverList.size() / 2)) {
-      Logger.printMsg(acks + " servers accepted the proposal request");
+      Logger.proposerLog(acks + " servers accepted the proposal request");
       // send commit request to all learners
       serverList.forEach((key, val) -> {
         String[] server = parser(val);
@@ -121,8 +121,8 @@ public class Proposer {
       });
     } else {
       response = "Failed to reach consensus. " + acks + "/" + serverList.size() + " supported transaction";
-      Logger.printMsg(response);
-      Logger.printMsg("Retry proposal request: " + clientRequest);
+      Logger.proposerLog(response);
+      Logger.proposerLog("Retry proposal request: " + clientRequest);
       return propose(clientRequest);
     }
 
@@ -140,7 +140,7 @@ public class Proposer {
       }
     });
 
-    Logger.printMsg("Proposal with id: " + proposalId + ", request : " + clientRequest + " finished");
+    Logger.proposerLog("Proposal with id: " + proposalId + ", request : " + clientRequest + " finished");
     return response;
   }
 
@@ -172,7 +172,6 @@ public class Proposer {
   public double getProposalID() {
     return Double.parseDouble(System.currentTimeMillis() + "." + port);
   }
-
 
   /**
    * If acceptors sent promises with values, then return the value with the maximum accepted proposal ID.

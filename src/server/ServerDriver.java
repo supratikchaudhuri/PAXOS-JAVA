@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.UnknownHostException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.HashMap;
 import java.util.Map;
 
 import utils.Logger;
@@ -16,41 +17,32 @@ import utils.Logger;
 public class ServerDriver {
   public static void main(String[] args) {
     try {
-      if (args.length != 1) {
-        throw new IllegalArgumentException("Please specify the <server #No.>");
+      if (args.length != 2) {
+        throw new IllegalArgumentException("Exactly 2 arguments required, \"<server_ip> <server_port>\"");
       }
-      String server = args[0];
-      Logger.printMsg("Loading server configuration file ...");
-      InputStream resource = ServerDriver.class.getClassLoader().getResourceAsStream("serverConfig.yml");
-      if (resource == null) {
-        throw new FileNotFoundException();
-      }
-      Yaml yaml = new Yaml();
-      Map<String, String> data = yaml.load(resource);
-      String serverInfo = data.get(server);
-      resource.close();
-      if (serverInfo == null) {
-        throw new IllegalArgumentException("Invalid input, please try with server<No.>");
-      }
-      // parse hostname and port
-      String[] split = serverInfo.split(":");
-      int port = Integer.parseInt(split[1]);
-      // registry
-      // set timeout
-      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "200");
+      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "30000");
+      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "30000");
+
+      String host = args[0];
+      int port = Integer.parseInt(args[1]);
+
+      Map<String, String> serverList = new HashMap<>();
+      serverList.put("server1", "localhost:5001");
+      serverList.put("server2", "localhost:5002");
+      serverList.put("server3", "localhost:5003");
+      serverList.put("server4", "localhost:5004");
+      serverList.put("server5", "localhost:5005");
+
       Registry registry = LocateRegistry.createRegistry(port);
-      PaxosAPI stub = new Server(data, port);
+      PaxosAPI stub = new Server(serverList, port);
       registry.bind("PaxosAPI", stub);
-    } catch (FileNotFoundException e) {
-      Logger.errorLog("serverConfig.yml file is not found");
+
     } catch (IllegalArgumentException iae) {
       Logger.errorLog(iae.getMessage());
     } catch (RemoteException | AlreadyBoundException e) {
       Logger.errorLog("Cannot register at given port, please modify the configuration file");
-    } catch (UnknownHostException | NotBoundException e) {
+    } catch (NotBoundException e) {
       Logger.errorLog("Cannot connect to Proposer helper with given the hostname and port");
-    } catch (IOException e) {
-      Logger.errorLog("Failed to close the configuration file");
     }
   }
 

@@ -72,4 +72,6 @@ public interface PaxosAPI extends Remote {
    */
   String commit(Message message) throws RemoteException;
 
+  String getName() throws  RemoteException;
+
 }

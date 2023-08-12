@@ -26,4 +26,14 @@ public class KeyValuePacket implements Serializable {
   public String getValue() {
     return value;
   }
+
+
+  public String toString() {
+    String reqType = "";
+    if(type == Type.GET) reqType = "GET";
+    if(type == Type.PUT) reqType = "PUT";
+    if(type == Type.DELETE) reqType = "DELETE";
+
+    return reqType + " (" + key + ", " + value + ")";
+  }
 }

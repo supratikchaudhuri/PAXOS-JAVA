@@ -29,6 +29,10 @@ public class Message implements Serializable {
     return packet;
   }
 
+  public String getRequest() {
+    return packet.toString();
+  }
+
   public String getKey() {
     return packet.getKey();
   }

@@ -24,7 +24,7 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
     this.learner = new Learner();
     CrashGenerator crashGenerator = new CrashGenerator(this.proposer, this.acceptor);
     start(crashGenerator);
-    Logger.printMsg("Server started ...");
+    Logger.printMsg("Server started ...\n");
   }
 
 
@@ -41,25 +41,25 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
 
   @Override
   public String get(KeyValuePacket message) throws RemoteException {
-    Logger.printMsg("Received GET request: key: " + message.getKey());
+    Logger.printMsg("Received GET request => key: " + message.getKey());
     String res = learner.commit(message);
-    Logger.printMsg("Sent GET response: " + res);
+    Logger.printMsg("GET response => " + res);
     return res;
   }
 
   @Override
   public String put(KeyValuePacket message) throws RemoteException {
-    Logger.printMsg("Received PUT request: key: " + message.getKey() + ", value: " + message.getValue());
+    Logger.printMsg("Received PUT request => key  " + message.getKey() + ", value: " + message.getValue());
     String res = proposer.propose(message);
-    Logger.printMsg("Sent PUT response: " + res);
+    Logger.printMsg("PUT response => " + res);
     return res;
   }
 
   @Override
   public String delete(KeyValuePacket message) throws RemoteException {
-    Logger.printMsg("Received DELETE request: key: " + message.getKey() + ", value: " + message.getValue());
+    Logger.printMsg("Received DELETE request => key: " + message.getKey() + ", value: " + message.getValue());
     String res = proposer.propose(message);
-    Logger.printMsg("Sent DELETE response: " + res);
+    Logger.printMsg("DELETE response => " + res);
     return res;
   }
 
@@ -80,8 +80,13 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
 
   @Override
   public String commit(Message message) throws RemoteException {
-    Logger.printMsg("Commit proposal No. " + message.getProposalId() + ", value: " + message.getValue());
+    Logger.printMsg("Commit proposal No. " + message.getProposalId() + ", value: " + message.getRequest());
     return learner.commit(message.getValue());
+  }
+
+  @Override
+  public String getName() throws RemoteException {
+    return "my _ name";
   }
 }
 

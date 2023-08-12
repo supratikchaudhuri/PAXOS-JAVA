@@ -27,7 +27,7 @@ public class Learner extends DB {
           res = "key: " + message.getKey() + ", value: " + get(message.getKey()) + " is immutable";
         } else {
           put(message.getKey(), message.getValue());
-          res = "key: " + message.getKey() + ", value: " + message.getValue() + " has been stored";
+          res = "key: " + message.getKey() + ", value: " + message.getValue() + " stored in Key-Value store";
         }
         return res;
       case DELETE:
