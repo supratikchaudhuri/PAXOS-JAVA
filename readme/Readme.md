@@ -21,7 +21,8 @@ Format of `servers.properties`file (see example image: server_properties.png in 
 ### Points to remember while starting the program
 - Please make sure you have the `map.properties` file in the same folder as the executable jar files.
 - In case a serving participants fail, please restart the whole program from step 1. (Could have implemented a feature to remove server from coordinators participant list, but it was out of scope for this project... maybe in the future).
-- Although you can create server instance at any host and port, only the ones mentioned in server.properties file will participate in paxos consensus algorithm
+- Although you can create server instance at any host and port, only the ones mentioned in server.properties file will participate in paxos consensus algorithm.
+- If there are multiple servers from different address spaces, make sure the contents of `servers.properties` file is same in all address spaces. 
 ---
 
 ### Interaction Rules with the server
