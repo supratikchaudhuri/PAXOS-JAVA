@@ -22,6 +22,8 @@ public class ServerDriver {
    */
   public static void main(String[] args) {
     try {
+      Map<String, String> serverList = ServerListFetcher.fetchServers();
+
       if (args.length != 2) {
         throw new IllegalArgumentException("Exactly 2 arguments required, \"<server_ip> <server_port>\"");
       }
@@ -32,8 +34,6 @@ public class ServerDriver {
       System.setProperty("java.rmi.server.hostname", host);
       System.setProperty("sun.rmi.transport.tcp.responseTimeout", "5000");
       System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "5000");
-
-      Map<String, String> serverList = ServerListFetcher.fetchServers();
 
       Registry registry = LocateRegistry.createRegistry(port);
       PaxosAPI stub = new Server(serverList, host, port);
