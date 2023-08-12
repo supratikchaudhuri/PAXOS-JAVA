@@ -44,6 +44,7 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
     Logger.printMsg("Received GET request => key: " + message.getKey());
     String res = learner.commit(message);
     Logger.printMsg("GET response => " + res);
+    Logger.printMsg("-----------------------------------------------------------------------\n\n");
     return res;
   }
 
@@ -52,6 +53,7 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
     Logger.printMsg("Received PUT request => key  " + message.getKey() + ", value: " + message.getValue());
     String res = proposer.propose(message);
     Logger.printMsg("PUT response => " + res);
+    Logger.printMsg("-----------------------------------------------------------------------\n\n");
     return res;
   }
 
@@ -60,6 +62,7 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
     Logger.printMsg("Received DELETE request => key: " + message.getKey() + ", value: " + message.getValue());
     String res = proposer.propose(message);
     Logger.printMsg("DELETE response => " + res);
+    Logger.printMsg("-----------------------------------------------------------------------\n\n");
     return res;
   }
 

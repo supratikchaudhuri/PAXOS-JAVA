@@ -24,7 +24,7 @@ public class Learner extends DB {
       case PUT:
         // if the key is existed
         if (isContain(message.getKey())) {
-          res = "key: " + message.getKey() + ", value: " + get(message.getKey()) + " is immutable";
+          res = "key: " + message.getKey() + ", with value: " + get(message.getKey()) + " already exists";
         } else {
           put(message.getKey(), message.getValue());
           res = "key: " + message.getKey() + ", value: " + message.getValue() + " stored in Key-Value store";

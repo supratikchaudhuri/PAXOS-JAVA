@@ -41,6 +41,7 @@ public class Proposer {
    * @return response to the request
    */
   public synchronized String propose(KeyValuePacket clientRequest) {
+    System.out.println("IS DOWN => " + isDown);
     acks = 0;
     promises.clear();
     
@@ -66,11 +67,13 @@ public class Proposer {
         Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at prepare phase");
       }
     });
-    // fail
-    if (isDown) {
-      Logger.errorLog("Could not propose request; proposer is down");
-      crash();
 
+    // checking for failure
+    if (isDown) {
+      response = "Could not propose request. Proposer is down";
+      Logger.errorLog(response);
+//      crash();
+      return response;
     }
 
     // check if it gets majority support
@@ -149,13 +152,13 @@ public class Proposer {
    */
   public void crash() {
     try {
-      Thread.sleep(5000);
-    } catch (InterruptedException ignored) {
+      Thread.sleep(10000);
+    } catch (InterruptedException ignore) {
     }
   }
 
   /**
-   * Marking server down
+   * Marking if proposer is down or not
    *
    * @param down boolean
    */

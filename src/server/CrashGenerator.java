@@ -20,7 +20,7 @@ public class CrashGenerator implements Runnable {
     Logger.printMsg("Crash generator started ...\n");
     BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
     while (true) {
-      Logger.printMsg("--------------CRASH-------------");
+      Logger.printMsg("--------------CRASH MENU-------------");
       Logger.printMsg("Please input command: \n0 to suspend the acceptor, \n1 to recover the acceptor, ");
       Logger.printMsg("2 to suspend the proposer, \n3 to recover the proposer");
       Logger.printMsg("NOTE: Once enable the suspend function, the acceptor will fail at either phase 1 or phase 2, the proposer will only fail at phase 1");

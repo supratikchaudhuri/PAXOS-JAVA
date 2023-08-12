@@ -68,8 +68,7 @@ public class Acceptor {
    * Use to end the current paxos round and reset the state, once learners have updated the key value store.
    */
   public void resetProposalAccepted() {
-    Logger.acceptorLog("Proposal ID: " + acceptedId + " round has ended\n" 
-             + "-----------------------------------------------------------------------\n\n");
+    Logger.acceptorLog("Proposal ID: " + acceptedId + " round has ended");
     this.proposalAccepted = false;
   }
 
@@ -79,7 +78,7 @@ public class Acceptor {
   public void crash() {
     if (isDown) {
       try {
-        Thread.sleep(5000);
+        Thread.sleep(10000);
       } catch (InterruptedException ignored) {
       }
     }

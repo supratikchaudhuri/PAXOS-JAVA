@@ -20,8 +20,8 @@ public class ServerDriver {
       if (args.length != 2) {
         throw new IllegalArgumentException("Exactly 2 arguments required, \"<server_ip> <server_port>\"");
       }
-      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "30000");
-      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "30000");
+      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "5000");
+      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "5000");
 
       String host = args[0];
       int port = Integer.parseInt(args[1]);
