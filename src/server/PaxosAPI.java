@@ -5,7 +5,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import utils.KeyValuePacket;
-import utils.Message;
+import utils.Request;
 
 /**
  * The api of Paxos consensus.
@@ -46,7 +46,7 @@ public interface PaxosAPI extends Remote {
    * @return promise of the proposal or null if rejected
    * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
    */
-  Message prepare(double proposalNum) throws RemoteException;
+  Request prepare(double proposalNum) throws RemoteException;
 
   /**
    * Use for acceptor to decide whether accept the message.
@@ -55,7 +55,7 @@ public interface PaxosAPI extends Remote {
    * @return ack accept or null if the proposal number smaller than current
    * @throws RemoteException thrown when cannot establish connection or the service is unavailable at proposer or acceptor
    */
-  Message accept(Message message) throws RemoteException;
+  Request accept(Request message) throws RemoteException;
 
   /**
    * Use for acceptor ends the current Paxos round.
@@ -71,7 +71,7 @@ public interface PaxosAPI extends Remote {
    * @return response after processing the commit of message
    * @throws RemoteException thrown when cannot establish connection
    */
-  String commit(Message message) throws RemoteException;
+  String commit(Request message) throws RemoteException;
 
   String getName() throws  RemoteException;
 

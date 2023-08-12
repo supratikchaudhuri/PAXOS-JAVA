@@ -8,7 +8,7 @@ import java.util.Map;
 
 import utils.KeyValuePacket;
 import utils.Logger;
-import utils.Message;
+import utils.Request;
 
 public class Server extends UnicastRemoteObject implements PaxosAPI {
 
@@ -69,12 +69,12 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
   }
 
   @Override
-  public Message prepare(double proposeNum) throws RemoteException {
+  public Request prepare(double proposeNum) throws RemoteException {
     return acceptor.prepare(proposeNum);
   }
 
   @Override
-  public Message accept(Message message) throws RemoteException {
+  public Request accept(Request message) throws RemoteException {
     return acceptor.accept(message);
   }
 
@@ -84,7 +84,7 @@ public class Server extends UnicastRemoteObject implements PaxosAPI {
   }
 
   @Override
-  public String commit(Message message) throws RemoteException {
+  public String commit(Request message) throws RemoteException {
     Logger.printMsg("Commit proposal No. " + message.getProposalId() + ", value: " + message.getRequest());
     return learner.commit(message.getValue());
   }

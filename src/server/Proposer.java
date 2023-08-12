@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
 
 import utils.KeyValuePacket;
 import utils.Logger;
-import utils.Message;
+import utils.Request;
 import utils.Type;
 
 /**
  * Proposer class that proposes a change in the shared resource shared by multiple server instances.
  */
 public class Proposer {
-  private final List<Message> promises = new ArrayList<>();
+  private final List<Request> promises = new ArrayList<>();
   private final Map<String, String> serverList;
   private final int port;
   private double proposalId;
@@ -57,7 +57,7 @@ public class Proposer {
 
       try {
         PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
-        Message res = api.prepare(proposalId);
+        Request res = api.prepare(proposalId);
         // if a promise
         if (res != null && res.getMessageType().equals(Type.PROMISE)) {
           promises.add(res);
@@ -90,7 +90,7 @@ public class Proposer {
 
         try {
           PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
-          Message res = api.accept(new Message(proposalId, Type.ACCEPT_REQUEST, value));
+          Request res = api.accept(new Request(proposalId, Type.ACCEPT_REQUEST, value));
 
           if (res != null && res.getMessageType().equals(Type.ACCEPT_RESPONSE)) {
             acks++;
@@ -116,7 +116,7 @@ public class Proposer {
 
         try {
           PaxosAPI api = (PaxosAPI) connect(host, port, "PaxosAPI");
-          response = api.commit(new Message(proposalId, Type.ACCEPT_REQUEST, value));
+          response = api.commit(new Request(proposalId, Type.ACCEPT_REQUEST, value));
         } catch (RemoteException | NotBoundException e) {
           Logger.errorLog("Cannot connect to server with host: " + host + ", port: " + port + " at commit phase");
         }
@@ -181,7 +181,7 @@ public class Proposer {
    * @return value with the maximum accepted proposal ID or current value
    */
   public KeyValuePacket getMaximumAcceptedValue() {
-    List<Message> list = promises.stream().filter(message -> message.getValue() != null).sorted(Comparator.comparingDouble(Message::getProposalId).reversed()).collect(Collectors.toList());
+    List<Request> list = promises.stream().filter(message -> message.getValue() != null).sorted(Comparator.comparingDouble(Request::getProposalId).reversed()).collect(Collectors.toList());
     return list.isEmpty() ? value : list.get(0).getValue();
   }
 

@@ -7,9 +7,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import server.PaxosAPI;
@@ -28,30 +26,24 @@ import static utils.Logger.responseLog;
  */
 public class Client {
   static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-  static List<PaxosAPI> servers = new ArrayList<>();
   static PaxosAPI api;
-//  static Map<String, String> serverList;
   static Map<String, PaxosAPI> serverMap = new HashMap<>();
 
   /**
-   * Driver method of the Client class
-   *
-   * @param args accepts command line arguments
+   * Driver method of the Client class.
+   * Sets up all the servers to communicate with from the servers.properties file
    */
   public static void main(String[] args) throws IOException, InterruptedException {
     try {
-      if (args.length == 0 || args.length % 2 != 0 || Integer.parseInt(args[1]) > 65535) {
-        throw new IllegalArgumentException("Invalid arguments. " +
-                "Please provide valid IPs and PORT (0-65535) numbers and start again.");
-      }
-
-      System.setProperty("sun.rmi.transport.tcp.responseTimeout", "30000");
-      System.setProperty("sun.rmi.transport.tcp.connectionTimeout", "30000");
+//      if (args.length == 0 || args.length % 2 != 0 || Integer.parseInt(args[1]) > 65535) {
+//        throw new IllegalArgumentException("Invalid arguments. " +
+//                "Please provide valid IPs and PORT (0-65535) numbers and start again.");
+//      }
 
       Logger.printMsg(getTimeStamp() + " Establishing communication with servers...");
 
       Map<String, String> serverList = ServerListFetcher.fetchServers();
-      for(String key: serverList.keySet()) {
+      for (String key : serverList.keySet()) {
         String[] server = serverList.get(key).split(":");
         String host = server[0];
         int port = Integer.parseInt(server[1]);
@@ -80,11 +72,26 @@ public class Client {
     }
   }
 
+  /**
+   * Get a specific PaxosAPI object from rmi
+   *
+   * @param host host of registry
+   * @param port port of registry
+   * @return PaxosAPI object (server)
+   * @throws RemoteException   exception
+   * @throws NotBoundException exception
+   */
   private static PaxosAPI getServer(String host, int port) throws RemoteException, NotBoundException {
     Registry registry = LocateRegistry.getRegistry(host, port);
     return (PaxosAPI) registry.lookup("PaxosAPI");
   }
 
+  /**
+   * Presents a UI to the user for key value store operations
+   *
+   * @return boolean representing if UI to be presented or not.
+   * @throws IOException exception
+   */
   private static boolean getOperationUI() throws IOException {
     String requestTime = "";
     String request = "";
@@ -109,7 +116,7 @@ public class Client {
           String value = getValue();
           request = "PUT (" + key + ", " + value + ")";
           requestTime = getTimeStamp();
-          KeyValuePacket  packet = new KeyValuePacket(Type.PUT, key, value);
+          KeyValuePacket packet = new KeyValuePacket(Type.PUT, key, value);
           response = api.put(packet);
 
           break;
@@ -166,26 +173,36 @@ public class Client {
     return br.readLine().trim();
   }
 
+  /**
+   * Asks user the id of the server they wish to communicate with.
+   *
+   * @return PaxosAPI class (server)
+   * @throws IOException exception
+   */
   private static PaxosAPI getServerByUserChoice() throws IOException {
     Logger.printMsg("Choose one of the available servers ids...");
 
-    for(String serverId: serverMap.keySet()) {
+    for (String serverId : serverMap.keySet()) {
       Logger.printMsg("ID: " + serverId + ", Address => " + serverMap.get(serverId).getName());
     }
 
     System.out.print("Enter server id: ");
     String id = br.readLine().trim();
-    if(serverMap.containsKey(id)) {
+    if (serverMap.containsKey(id)) {
       System.out.println("Choosing: " + id);
       return serverMap.get(id);
-    }
-    else {
+    } else {
       Logger.printMsg("Please choose a valid server");
       return api;
     }
   }
 
-  private static void addDefaultKeyValuePairs() throws IOException, InterruptedException {
+  /**
+   * Adds default key value pairs to the key value store
+   *
+   * @throws IOException exception
+   */
+  private static void addDefaultKeyValuePairs() throws IOException {
     api.put(new KeyValuePacket(Type.PUT, "hello", "world"));
     api.put(new KeyValuePacket(Type.PUT, "CS6650", "Building Scalable Distributed System"));
     api.put(new KeyValuePacket(Type.PUT, "MS", "Computer Science"));

@@ -2,7 +2,7 @@ package server;
 
 import utils.KeyValuePacket;
 import utils.Logger;
-import utils.Message;
+import utils.Request;
 import utils.Type;
 
 public class Acceptor {
@@ -21,7 +21,7 @@ public class Acceptor {
    * If the proposal is accepted, return a promise without any value, i.e. null;
    * Else return nothing to indicate rejection of the proposal ID that is smaller than the maximum proposal ID
    */
-  public Message prepare(double id) {
+  public Request prepare(double id) {
     // check for failure
     crash();
     
@@ -31,10 +31,10 @@ public class Acceptor {
       
       // check if any proposal has been already accepted
       if (proposalAccepted) {
-        return new Message(acceptedId, Type.PROMISE, acceptedValue);
+        return new Request(acceptedId, Type.PROMISE, acceptedValue);
       }
       // return a promise without any value
-      return new Message(maxId, Type.PROMISE, null);
+      return new Request(maxId, Type.PROMISE, null);
     }
     Logger.acceptorLog("Proposal ID: " + id + " rejected; Max proposal ID seen till now: " + maxId);
     return null;
@@ -47,7 +47,7 @@ public class Acceptor {
    * @return If the value is accepted, return an acknowledgement;
    * Else return nothing to indicate rejection of the proposal ID that is smaller than the maximum proposal ID
    */
-  public Message accept(Message message) {
+  public Request accept(Request message) {
     // checks for failure
     crash();
 
@@ -57,7 +57,7 @@ public class Acceptor {
       acceptedId = message.getProposalId();
       acceptedValue = message.getValue();
       Logger.acceptorLog("Sent 'ACCEPTED' ack to proposal ID: " + maxId);
-      return new Message(maxId, Type.ACCEPT_RESPONSE, null);
+      return new Request(maxId, Type.ACCEPT_RESPONSE, null);
     }
     Logger.acceptorLog("Reject proposal ID: " + message.getProposalId() + ", reason: smaller than current proposal number: " + maxId);
     return null;

@@ -1,7 +1,6 @@
 package DB;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,15 +12,17 @@ import java.util.Set;
 import utils.Logger;
 
 /**
- * Database
+ * Database class that stores the key value pairs in a map.
  */
 public class DB {
+  private final Map<String, String> map;
 
-  // create a hash map to storage key value pairs
-  private final Map<String, String> db;
-
+  /**
+   * Constructor for DB class. Initializes map with already present values from offline file.
+   * @throws IOException thrown if error in accessing map.properties file.
+   */
   public DB() throws IOException {
-    this.db = new HashMap<>();
+    this.map = new HashMap<>();
     populateMap();
   }
 
@@ -35,7 +36,7 @@ public class DB {
 
     for(Object o: set){
       String key = (String)o;
-      db.put(key, prop.getProperty(key));
+      map.put(key, prop.getProperty(key));
     }
   }
 
@@ -46,7 +47,7 @@ public class DB {
    * @return the value of the key if the key is available, otherwise null
    */
   public synchronized String get(String key) {
-    return db.get(key);
+    return map.get(key);
   }
 
   /**
@@ -56,7 +57,7 @@ public class DB {
    * @param value the value of the key
    */
   public synchronized void put(String key, String value) {
-    db.put(key, value);
+    map.put(key, value);
   }
 
   /**
@@ -65,7 +66,7 @@ public class DB {
    * @param key the key to be deleted
    */
   public synchronized void delete(String key) {
-    db.remove(key);
+    map.remove(key);
   }
 
   /**
@@ -75,7 +76,7 @@ public class DB {
    * @return true if it has, otherwise false
    */
   public synchronized boolean contains(String key) {
-    return db.containsKey(key);
+    return map.containsKey(key);
   }
 
   public void saveMapToFile() throws IOException {
@@ -85,8 +86,8 @@ public class DB {
     prop.load(in);
     in.close();
 
-    for(String key: db.keySet()) {
-      prop.setProperty(key, db.get(key));
+    for(String key: map.keySet()) {
+      prop.setProperty(key, map.get(key));
     }
     prop.store(new FileOutputStream("map.properties"), null);
   }

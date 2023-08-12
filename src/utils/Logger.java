@@ -11,7 +11,7 @@ public class Logger {
   /**
    * Prints message on console
    *
-   * @param msg string o be printed
+   * @param msg string to be printed
    */
   public static void printMsg(String msg) {
     System.out.println(msg);
@@ -55,10 +55,20 @@ public class Logger {
     System.out.println(getTimeStamp() + "RESPONSE: " + res);
   }
 
+  /**
+   * Prints messages by proposer in the console
+   *
+   * @param res proposer message
+   */
   public static void proposerLog(String res) {
     System.out.println(getTimeStamp() + "PROPOSER: " + res);
   }
 
+  /**
+   * Prints messages by acceptor in the console
+   *
+   * @param res acceptor message
+   */
   public static void acceptorLog(String res) {
     System.out.println(getTimeStamp() + "ACCEPTOR: " + res);
   }
